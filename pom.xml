@@ -8,6 +8,34 @@
     <artifactId>you-web-utils</artifactId>
     <version>1.0</version>
 
+    <parent>
+        <groupId>org.sonatype.oss</groupId>
+        <artifactId>oss-parent</artifactId>
+        <version>7</version>
+    </parent>
+
+    <licenses>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <scm>
+        <url> https://github.com/youyinnn/YouWebUtils</url>
+        <connection>https://github.com/youyinnn/YouWebUtils.git</connection>
+        <developerConnection>https://youyinnn.github.io</developerConnection>
+    </scm>
+
+    <developers>
+        <developer>
+            <name>youyinnn</name>
+            <email>youyinnn@gmail.com</email>
+            <url>https://youyinnn.github.io</url>
+        </developer>
+    </developers>
+
     <build>
         <plugins>
             <!--编译插件-->
@@ -62,7 +90,7 @@
         <dependency>
             <groupId>com.alibaba</groupId>
             <artifactId>fastjson</artifactId>
-            <version>1.2.36</version>
+            <version>1.2.46</version>
         </dependency>
 
         <!-- jwt -->
