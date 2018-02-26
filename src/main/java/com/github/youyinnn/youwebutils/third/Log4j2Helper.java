@@ -1,12 +1,12 @@
 package com.github.youyinnn.youwebutils.third;
 
-import com.sun.xml.internal.messaging.saaj.util.ByteInputStream;
 import org.apache.logging.log4j.core.config.ConfigurationSource;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.dom4j.Node;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -21,7 +21,7 @@ public class Log4j2Helper {
     }
 
     private static void setConfig(String xmlString) throws IOException {
-        ConfigurationSource source = new ConfigurationSource(new ByteInputStream(xmlString.getBytes("utf-8"), xmlString.length()));
+        ConfigurationSource source = new ConfigurationSource(new ByteArrayInputStream(xmlString.getBytes("utf-8")));
         Configurator.initialize(null, source);
     }
 
