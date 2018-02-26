@@ -6,7 +6,7 @@
 
     <groupId>com.github.youyinnn</groupId>
     <artifactId>you-web-utils</artifactId>
-    <version>1.0</version>
+    <version>1.1</version>
 
     <parent>
         <groupId>org.sonatype.oss</groupId>
@@ -99,6 +99,20 @@
             <artifactId>java-jwt</artifactId>
             <version>3.2.0</version>
         </dependency>
+
+        <dependency>
+            <groupId>dom4j</groupId>
+            <artifactId>dom4j</artifactId>
+            <version>1.6.1</version>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/jaxen/jaxen -->
+        <dependency>
+            <groupId>jaxen</groupId>
+            <artifactId>jaxen</artifactId>
+            <version>1.1.6</version>
+        </dependency>
+
     </dependencies>
 
 </project>
