@@ -17,7 +17,7 @@ public class Dom4jHelper {
     private static SAXReader saxReader = new SAXReader();
 
     public static Document readDoc(String systemId) throws DocumentException {
-        return saxReader.read(systemId);
+        return saxReader.read(ClassLoader.getSystemClassLoader().getResourceAsStream(systemId));
     }
 
     public static Document readDoc(File file) throws DocumentException {
