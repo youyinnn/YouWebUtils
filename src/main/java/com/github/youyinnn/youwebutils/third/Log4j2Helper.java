@@ -55,7 +55,7 @@ public class Log4j2Helper {
     }
 
     public static String mergeConfigWithDefaultXML(Document minor) throws DocumentException {
-        InputStream mainConfigIn = ClassLoader.getSystemClassLoader().getResourceAsStream("com/github/youyinnn/lab/log4j2.xml");
+        InputStream mainConfigIn = ClassLoader.getSystemClassLoader().getResourceAsStream("log4j2.xml");
         Document main = Dom4jHelper.readDoc(mainConfigIn);
         return mergeConfigXML(main, minor);
     }
