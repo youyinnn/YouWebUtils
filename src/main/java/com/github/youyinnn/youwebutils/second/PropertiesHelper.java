@@ -3,6 +3,7 @@ package com.github.youyinnn.youwebutils.second;
 import com.alibaba.fastjson.JSON;
 
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
 import java.util.HashMap;
 import java.util.Properties;
 
@@ -57,7 +58,7 @@ public class PropertiesHelper {
         return JSON.toJSONString(propMap);
     }
 
-    public static void main(String[] args) {
-        System.out.println(getSystemPropertiesJson());
+    public static String getPID() {
+        return ManagementFactory.getRuntimeMXBean().getName().split("@")[0];
     }
 }
