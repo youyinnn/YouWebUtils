@@ -12,63 +12,74 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author youyinnn
  */
 public class Log4j2Helper {
 
-    private static ArrayList<String>        fileList        = new ArrayList<>();
-    private static HashMap<String, String>  appendersPool   = new HashMap<>();
-    private static HashMap<String, String>  loggersPool     = new HashMap<>();
-    private static HashMap<String, String>  propertiesPool  = new HashMap<>();
-    private static String                   usingXMLString;
+    private static ArrayList<String>        addedConfigFiles        = new ArrayList<>();
+    private static HashMap<String, String>  appendersPool           = new HashMap<>();
+    private static HashMap<String, String>  loggersPool             = new HashMap<>();
+    private static HashMap<String, String>  propertiesPool          = new HashMap<>();
+    private static String                   currentConfigStr;
+    private static String                   configXMLFrameworkFile;
 
-    public static void setConfig(InputStream in) throws IOException {
+    public static void enabledConfig(InputStream in) throws IOException {
         ConfigurationSource source = new ConfigurationSource(in);
         Configurator.initialize(null, source);
     }
 
-    private static void setConfig(String xmlString) throws IOException {
+    private static void enabledConfig(String xmlString) throws IOException {
         ConfigurationSource source = new ConfigurationSource(new ByteArrayInputStream(xmlString.getBytes("utf-8")));
         Configurator.initialize(null, source);
     }
 
-    public static void useConfig(String resourcePath) throws DocumentException, IOException {
-        InputStream mainConfigIn = ClassLoader.getSystemClassLoader().getResourceAsStream("log4j2.xml");
-        addFileInPool(resourcePath);
-        if (mainConfigIn == null) {
-            // 没有主配置的时候 我们以resourcePath的文件为"主配置" 即Configuration参数以最新传入的为主
-            if (usingXMLString == null || usingXMLString.length() == 0) {
-                Document minor = Dom4jHelper.readDoc(resourcePath);
-                usingXMLString = minor.asXML();
+    public static void useConfig(String configFilePath) throws DocumentException, IOException {
+        String defaultConfigPath = "log4j2.xml";
+        InputStream defaultConfig = ClassLoader.getSystemClassLoader().getResourceAsStream(defaultConfigPath);
+        addConfigInPool(configFilePath);
+        if (defaultConfig == null) {
+            // 没有主配置的时候 我们以configFilePath的文件为"主配置" 即Configuration参数以最新传入的为主
+            Document configDoc = Dom4jHelper.readDoc(configFilePath);
+            if (currentConfigStr == null || currentConfigStr.length() == 0) {
+                currentConfigStr = configDoc.asXML();
             } else {
-                StringBuffer preUsingDoc = new StringBuffer(usingXMLString);
-                if (appendersPool.containsKey(resourcePath)) {
-                    String appenders = appendersPool.get(resourcePath);
-                    preUsingDoc.insert(getAppendersEndIndex(preUsingDoc), appenders);
-                }
-                if (loggersPool.containsKey(resourcePath)) {
-                    String loggers = loggersPool.get(resourcePath);
-                    preUsingDoc.insert(getLoggersEndIndex(preUsingDoc), loggers);
-                }
-                if (propertiesPool.containsKey(resourcePath)){
-                    String properties = propertiesPool.get(resourcePath);
-                    int propertiesEndIndex = getPropertiesEndIndex(preUsingDoc);
-                    if (propertiesEndIndex < 0) {
-                        int i = preUsingDoc.indexOf("<Appenders>");
-                        if (i < 0) {
-                            i = preUsingDoc.indexOf("<appenders>");
+                StringBuffer configStr = new StringBuffer(configDoc.asXML());
+                for (Map.Entry<String, String> entry : appendersPool.entrySet()) {
+                    if (!entry.getKey().equals(configFilePath)) {
+                        int appendersEndIndex = getAppendersEndIndex(configStr);
+                        if (appendersEndIndex > 0) {
+                            configStr.insert(appendersEndIndex, entry.getValue());
                         }
-                        preUsingDoc.insert(i,"<Properties></Properties>\r\n\t");
                     }
-                    preUsingDoc.insert(getPropertiesEndIndex(preUsingDoc), properties);
                 }
-                usingXMLString = String.valueOf(preUsingDoc);
+                for (Map.Entry<String, String> entry : loggersPool.entrySet()) {
+                    if (!entry.getKey().equals(configFilePath)) {
+                        int loggersEndIndex = getLoggersEndIndex(configStr);
+                        if (loggersEndIndex > 0) {
+                            configStr.insert(loggersEndIndex, entry.getValue());
+                        }
+                    }
+                }
+                for (Map.Entry<String, String> entry : propertiesPool.entrySet()) {
+                    if (!entry.getKey().equals(configFilePath)) {
+                        int propertiesEndIndex = getPropertiesEndIndex(configStr);
+                        if (propertiesEndIndex > 0) {
+                            configStr.insert(propertiesEndIndex, entry.getValue());
+                        }
+                    }
+                }
+                currentConfigStr = String.valueOf(configStr);
             }
+            configXMLFrameworkFile = configFilePath;
         } else {
+            if (configXMLFrameworkFile == null) {
+                configXMLFrameworkFile = defaultConfigPath;
+            }
             // 有主配置的时候 我们只需要把次要配置加载到配置池里 然后把配置池里的配置都合并到主配置中
-            Document main = Dom4jHelper.readDoc(mainConfigIn);
+            Document main = Dom4jHelper.readDoc(defaultConfig);
             StringBuffer mainDoc = new StringBuffer(main.asXML());
             if (!appendersPool.isEmpty()) {
                 Collection<String> appenders = appendersPool.values();
@@ -96,31 +107,31 @@ public class Log4j2Helper {
                     mainDoc.insert(getPropertiesEndIndex(mainDoc), property);
                 }
             }
-            usingXMLString = String.valueOf(mainDoc);
+            currentConfigStr = String.valueOf(mainDoc);
         }
-        setConfig(usingXMLString);
+        enabledConfig(currentConfigStr);
     }
 
-    private static int getAppendersEndIndex(StringBuffer doc) {
-        int i = doc.indexOf("</Appenders>");
+    private static int getAppendersEndIndex(StringBuffer configStr) {
+        int i = configStr.indexOf("</Appenders>");
         if (i < 0) {
-            i = doc.indexOf("</appenders>");
-        }
-        return i;
-    }
-
-    private static int getLoggersEndIndex(StringBuffer doc) {
-        int i = doc.indexOf("</Loggers>");
-        if (i < 0) {
-            i = doc.indexOf("</Loggers>");
+            i = configStr.indexOf("</appenders>");
         }
         return i;
     }
 
-    private static int getPropertiesEndIndex(StringBuffer doc) {
-        int i = doc.indexOf("</Properties>");
+    private static int getLoggersEndIndex(StringBuffer configStr) {
+        int i = configStr.indexOf("</Loggers>");
         if (i < 0) {
-            i = doc.indexOf("</properties>");
+            i = configStr.indexOf("</Loggers>");
+        }
+        return i;
+    }
+
+    private static int getPropertiesEndIndex(StringBuffer configStr) {
+        int i = configStr.indexOf("</Properties>");
+        if (i < 0) {
+            i = configStr.indexOf("</properties>");
         }
         return i;
     }
@@ -150,34 +161,40 @@ public class Log4j2Helper {
         return getChildren(doc, "Properties");
     }
 
-    private static void addFileInPool(String resourcesPath) throws DocumentException {
-        Document doc = Dom4jHelper.readDoc(resourcesPath);
+    private static void addConfigInPool(String configFilePath) throws DocumentException {
+        Document doc = Dom4jHelper.readDoc(configFilePath);
         String appendersAsString = getAppendersAsString(doc);
         String loggersAsString = getLoggersAsString(doc);
         String propertiesAsString = getPropertiesAsString(doc);
         if (appendersAsString != null) {
-            appendersPool.put(resourcesPath, appendersAsString);
+            appendersPool.put(configFilePath, appendersAsString);
         }
         if (loggersAsString != null) {
-            loggersPool.put(resourcesPath, loggersAsString);
+            loggersPool.put(configFilePath, loggersAsString);
         }
         if (propertiesAsString != null) {
-            propertiesPool.put(resourcesPath, propertiesAsString);
+            propertiesPool.put(configFilePath, propertiesAsString);
         }
-        fileList.add(resourcesPath);
+        addedConfigFiles.add(configFilePath);
     }
 
-    private static void removeFileFromPool(String resourcePath) {
-        appendersPool.remove(resourcePath);
-        loggersPool.remove(resourcePath);
-        propertiesPool.remove(resourcePath);
+    private static void removeConfigFromPool(String configFilePath) {
+        appendersPool.remove(configFilePath);
+        loggersPool.remove(configFilePath);
+        propertiesPool.remove(configFilePath);
     }
 
     public static ArrayList<String> getFileList() {
-        return fileList;
+        return addedConfigFiles;
     }
 
-    public static String getUsingXMLString() {
-        return usingXMLString;
+    public static String getCurrentConfigStr() {
+        return currentConfigStr;
+    }
+
+    public static String getConfigStatus() {
+        return "Log4j2 Configuration status: \r\n"
+                + "\t Main config File: " + configXMLFrameworkFile + ";\r\n"
+                + "\t Minor config Files: " + addedConfigFiles;
     }
 }
