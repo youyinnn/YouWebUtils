@@ -10,9 +10,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.Map;
 
 /**
  * @author youyinnn
@@ -45,71 +43,64 @@ public class Log4j2Helper {
             Document configDoc = Dom4jHelper.readDoc(configFilePath);
             if (currentConfigStr == null || currentConfigStr.length() == 0) {
                 currentConfigStr = configDoc.asXML();
+                configXMLFrameworkFile = configFilePath;
             } else {
-                StringBuffer configStr = new StringBuffer(configDoc.asXML());
-                for (Map.Entry<String, String> entry : appendersPool.entrySet()) {
-                    if (!entry.getKey().equals(configFilePath)) {
-                        int appendersEndIndex = getAppendersEndIndex(configStr);
-                        if (appendersEndIndex > 0) {
-                            configStr.insert(appendersEndIndex, entry.getValue());
-                        }
-                    }
-                }
-                for (Map.Entry<String, String> entry : loggersPool.entrySet()) {
-                    if (!entry.getKey().equals(configFilePath)) {
-                        int loggersEndIndex = getLoggersEndIndex(configStr);
-                        if (loggersEndIndex > 0) {
-                            configStr.insert(loggersEndIndex, entry.getValue());
-                        }
-                    }
-                }
-                for (Map.Entry<String, String> entry : propertiesPool.entrySet()) {
-                    if (!entry.getKey().equals(configFilePath)) {
-                        int propertiesEndIndex = getPropertiesEndIndex(configStr);
-                        if (propertiesEndIndex > 0) {
-                            configStr.insert(propertiesEndIndex, entry.getValue());
-                        }
-                    }
-                }
-                currentConfigStr = String.valueOf(configStr);
+                currentConfigStr = String.valueOf(mergeMainAndMinor(currentConfigStr, configFilePath));
             }
-            configXMLFrameworkFile = configFilePath;
         } else {
+            Document main = Dom4jHelper.readDoc(defaultConfig);
             if (configXMLFrameworkFile == null) {
                 configXMLFrameworkFile = defaultConfigPath;
+                currentConfigStr = main.asXML();
             }
             // 有主配置的时候 我们只需要把次要配置加载到配置池里 然后把配置池里的配置都合并到主配置中
-            Document main = Dom4jHelper.readDoc(defaultConfig);
-            StringBuffer mainDoc = new StringBuffer(main.asXML());
-            if (!appendersPool.isEmpty()) {
-                Collection<String> appenders = appendersPool.values();
-                for (String appender : appenders) {
-                    mainDoc.insert(getAppendersEndIndex(mainDoc), appender);
-                }
-            }
-            if (!loggersPool.isEmpty()) {
-                Collection<String> loggers = loggersPool.values();
-                for (String logger : loggers) {
-                    mainDoc.insert(getLoggersEndIndex(mainDoc), logger);
-                }
-            }
-            if (!propertiesPool.isEmpty()) {
-                String mainProperties = getChildren(main, "Properties");
-                if (mainProperties == null) {
-                    int i = mainDoc.indexOf("<Appenders>");
-                    if (i < 0) {
-                        i = mainDoc.indexOf("<appenders>");
-                    }
-                    mainDoc.insert(i,"<Properties></Properties>\r\n\t");
-                }
-                Collection<String> properties = propertiesPool.values();
-                for (String property : properties) {
-                    mainDoc.insert(getPropertiesEndIndex(mainDoc), property);
-                }
-            }
-            currentConfigStr = String.valueOf(mainDoc);
+            currentConfigStr = String.valueOf(mergeMainAndMinor(currentConfigStr, configFilePath));
         }
         enabledConfig(currentConfigStr);
+    }
+
+    private static String mergeMainAndMinor(String mainXMLStr, String minorXMLFilePath) {
+        StringBuffer mainXMLSb = new StringBuffer(mainXMLStr);
+        String loggers = loggersPool.get(minorXMLFilePath);
+        if (loggers != null) {
+            int loggersEndIndex = getLoggersEndIndex(mainXMLSb);
+            if (loggersEndIndex < 0) {
+                int i = mainXMLSb.indexOf("</Configuration>");
+                if (i < 0) {
+                    i = mainXMLSb.indexOf("</configuration>");
+                }
+                mainXMLSb.insert(i, "<Loggers></Loggers>\r\n\t");
+                loggersEndIndex = getLoggersEndIndex(mainXMLSb);
+            }
+            mainXMLSb.insert(loggersEndIndex, loggers);
+        }
+        String appender = appendersPool.get(minorXMLFilePath);
+        if (appender != null) {
+            int appendersEndIndex = getAppendersEndIndex(mainXMLSb);
+            if (appendersEndIndex < 0) {
+                int i = mainXMLSb.indexOf("<Loggers>");
+                if (i < 0) {
+                    i = mainXMLSb.indexOf("<loggers>");
+                }
+                mainXMLSb.insert(i, "<Appenders></Appenders>\r\n\t");
+                appendersEndIndex = getAppendersEndIndex(mainXMLSb);
+            }
+            mainXMLSb.insert(appendersEndIndex, appender);
+        }
+        String properties = propertiesPool.get(minorXMLFilePath);
+        if (properties != null) {
+            int propertiesEndIndex = getPropertiesEndIndex(mainXMLSb);
+            if (propertiesEndIndex < 0) {
+                int i = mainXMLSb.indexOf("<Appenders>");
+                if (i < 0) {
+                    i = mainXMLSb.indexOf("<appenders>");
+                }
+                mainXMLSb.insert(i, "<Properties></Properties>\r\n\t");
+                propertiesEndIndex = getPropertiesEndIndex(mainXMLSb);
+            }
+            mainXMLSb.insert(propertiesEndIndex, properties);
+        }
+        return String.valueOf(mainXMLSb);
     }
 
     private static int getAppendersEndIndex(StringBuffer configStr) {
