@@ -23,8 +23,8 @@ public class JwtHelper {
 
     private JWTCreator.Builder builder;
 
-    public static void initJWTWithHMAC256(String _issuer, String secret) {
-        issuer = _issuer;
+    public static void initJWTWithHMAC256(String issuer, String secret) {
+        JwtHelper.issuer = issuer;
         try {
             alg = Algorithm.HMAC256(secret);
         } catch (UnsupportedEncodingException e) {
@@ -32,8 +32,8 @@ public class JwtHelper {
         }
     }
 
-    public static void initJWTWithHMAC512(String _issuer, String secret) {
-        issuer = _issuer;
+    public static void initJWTWithHMAC512(String issuer, String secret) {
+        JwtHelper.issuer = issuer;
         try {
             alg = Algorithm.HMAC512(secret);
         } catch (UnsupportedEncodingException e) {
