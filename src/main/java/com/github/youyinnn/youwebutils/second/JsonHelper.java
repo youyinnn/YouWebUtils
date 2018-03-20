@@ -3,6 +3,7 @@ package com.github.youyinnn.youwebutils.second;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.github.youyinnn.youwebutils.third.YouCollectionsUtils;
 
 import java.io.File;
 import java.io.FileReader;
@@ -247,6 +248,12 @@ public class JsonHelper {
         } else {
             return null;
         }
+    }
+
+    public static String getJsonStr(Object ... objects) {
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.putAll(YouCollectionsUtils.getYouHashMap(objects));
+        return jsonObject.toJSONString();
     }
 
     private static boolean isJsonObject(String text){
