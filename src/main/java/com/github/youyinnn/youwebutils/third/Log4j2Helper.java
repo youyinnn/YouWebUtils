@@ -1,5 +1,7 @@
 package com.github.youyinnn.youwebutils.third;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.config.ConfigurationSource;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.dom4j.Document;
@@ -23,6 +25,7 @@ public class Log4j2Helper {
     private static HashMap<String, String>  propertiesPool          = new HashMap<>();
     private static String                   currentConfigStr;
     private static String                   configXMLFrameworkFile;
+    private static boolean                  isCurrentConfigUsed     = false;
 
     public static void enabledConfig(InputStream in) throws IOException {
         ConfigurationSource source = new ConfigurationSource(in);
@@ -30,8 +33,7 @@ public class Log4j2Helper {
     }
 
     private static void enabledConfig(String xmlString) throws IOException {
-        ConfigurationSource source = new ConfigurationSource(new ByteArrayInputStream(xmlString.getBytes("utf-8")));
-        Configurator.initialize(null, source);
+        enabledConfig(new ByteArrayInputStream(xmlString.getBytes("utf-8")));
     }
 
     public static void useConfig(String configFilePath) throws DocumentException, IOException {
@@ -56,7 +58,6 @@ public class Log4j2Helper {
             // 有主配置的时候 我们只需要把次要配置加载到配置池里 然后把配置池里的配置都合并到主配置中
             currentConfigStr = String.valueOf(mergeMainAndMinor(currentConfigStr, configFilePath));
         }
-        enabledConfig(currentConfigStr);
     }
 
     private static String mergeMainAndMinor(String mainXMLStr, String minorXMLFilePath) {
@@ -187,5 +188,31 @@ public class Log4j2Helper {
         return "Log4j2 Configuration status: \r\n"
                 + "\t Main config File: " + configXMLFrameworkFile + ";\r\n"
                 + "\t Minor config Files: " + addedConfigFiles;
+    }
+
+    private static void isConfigUsed() {
+        if (!isCurrentConfigUsed) {
+            try {
+                enabledConfig(currentConfigStr);
+                isCurrentConfigUsed = true;
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public static Logger getLogger(String name) {
+        isConfigUsed();
+        return LogManager.getLogger(name);
+    }
+
+    public static Logger getLogger(Class<?> clazz) {
+        isConfigUsed();
+        return LogManager.getLogger(clazz);
+    }
+
+    public static Logger getRootLogger() {
+        isConfigUsed();
+        return LogManager.getRootLogger();
     }
 }
