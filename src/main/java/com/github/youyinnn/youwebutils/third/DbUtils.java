@@ -54,4 +54,14 @@ public class DbUtils {
         resultSet.close();
         return columns;
     }
+
+    public static String turnToAlibabaDataBaseNamingRules(String name) {
+        for (int i = 1 ; i < name.length() ; ++i) {
+            char c = name.charAt(i);
+            if (c >= 65 && c <=90) {
+                name = name.replaceAll(c+"", "_" + (char)(c+32));
+            }
+        }
+        return name.toLowerCase();
+    }
 }
