@@ -8,9 +8,8 @@ import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.dom4j.Node;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -36,27 +35,31 @@ public class Log4j2Helper {
         enabledConfig(new ByteArrayInputStream(xmlString.getBytes("utf-8")));
     }
 
-    public static void useConfig(String configFilePath) throws DocumentException, IOException {
-        String defaultConfigPath = "log4j2.xml";
-        InputStream defaultConfig = ClassLoader.getSystemClassLoader().getResourceAsStream(defaultConfigPath);
-        addConfigInPool(configFilePath);
-        if (defaultConfig == null) {
-            // 没有主配置的时候 我们以configFilePath的文件为"主配置" 即Configuration参数以最新传入的为主
-            Document configDoc = Dom4jHelper.readDoc(configFilePath);
-            if (currentConfigStr == null || currentConfigStr.length() == 0) {
-                currentConfigStr = configDoc.asXML();
-                configXMLFrameworkFile = configFilePath;
+    public static void useConfig(URL configFileURL) throws DocumentException {
+        URL defaultConfigFileRs = Log4j2Helper.class.getResource("/log4j2.xml");
+        if (configFileURL == null) {
+            throw new DocumentException("URL指定的资源不存在!");
+        } else {
+            String configFilePath = configFileURL.getPath();
+            addConfigInPool(configFileURL, configFilePath);
+            if (defaultConfigFileRs == null) {
+                // 没有主配置的时候 我们以configFilePath的文件为"主配置" 即Configuration参数以最新传入的为主
+                Document configDoc = Dom4jHelper.readDoc(configFileURL);
+                if (currentConfigStr == null || currentConfigStr.length() == 0) {
+                    currentConfigStr = configDoc.asXML();
+                    configXMLFrameworkFile = configFilePath;
+                } else {
+                    currentConfigStr = String.valueOf(mergeMainAndMinor(currentConfigStr, configFilePath));
+                }
             } else {
+                Document main = Dom4jHelper.readDoc(defaultConfigFileRs);
+                if (configXMLFrameworkFile == null) {
+                    configXMLFrameworkFile = defaultConfigFileRs.getPath();
+                    currentConfigStr = main.asXML();
+                }
+                // 有主配置的时候 我们只需要把次要配置加载到配置池里 然后把配置池里的配置都合并到主配置中
                 currentConfigStr = String.valueOf(mergeMainAndMinor(currentConfigStr, configFilePath));
             }
-        } else {
-            Document main = Dom4jHelper.readDoc(defaultConfig);
-            if (configXMLFrameworkFile == null) {
-                configXMLFrameworkFile = defaultConfigPath;
-                currentConfigStr = main.asXML();
-            }
-            // 有主配置的时候 我们只需要把次要配置加载到配置池里 然后把配置池里的配置都合并到主配置中
-            currentConfigStr = String.valueOf(mergeMainAndMinor(currentConfigStr, configFilePath));
         }
     }
 
@@ -153,8 +156,8 @@ public class Log4j2Helper {
         return getChildren(doc, "Properties");
     }
 
-    private static void addConfigInPool(String configFilePath) throws DocumentException {
-        Document doc = Dom4jHelper.readDoc(configFilePath);
+    private static void addConfigInPool(URL fileUrl, String configFilePath) throws DocumentException {
+        Document doc = Dom4jHelper.readDoc(fileUrl);
         String appendersAsString = getAppendersAsString(doc);
         String loggersAsString = getLoggersAsString(doc);
         String propertiesAsString = getPropertiesAsString(doc);
@@ -185,9 +188,13 @@ public class Log4j2Helper {
     }
 
     public static String getConfigStatus() {
-        return "Log4j2 Configuration status: \r\n"
-                + "\t Main config File: " + configXMLFrameworkFile + ";\r\n"
-                + "\t Minor config Files: " + addedConfigFiles;
+        StringBuilder files = new StringBuilder();
+        for (String addedConfigFile : addedConfigFiles) {
+            files.append("\t\t\t").append(addedConfigFile).append(System.lineSeparator());
+        }
+        return "Log4j2 Configuration status: " + System.lineSeparator()
+                + "\t Main config File: " + configXMLFrameworkFile + ";" + System.lineSeparator()
+                + "\t Minor config Files: " + System.lineSeparator() + files.toString();
     }
 
     private static void isConfigUsed() {
