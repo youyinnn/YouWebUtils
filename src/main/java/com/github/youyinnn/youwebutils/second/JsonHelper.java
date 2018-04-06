@@ -251,9 +251,13 @@ public class JsonHelper {
     }
 
     public static String getJsonStr(Object ... objects) {
+        return getJsonObject(objects).toJSONString();
+    }
+
+    public static JSONObject getJsonObject(Object ... objects) {
         JSONObject jsonObject = new JSONObject();
         jsonObject.putAll(YouCollectionsUtils.getYouHashMap(objects));
-        return jsonObject.toJSONString();
+        return jsonObject;
     }
 
     private static boolean isJsonObject(String text){
