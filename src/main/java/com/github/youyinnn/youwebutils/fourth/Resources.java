@@ -11,11 +11,10 @@ import java.util.Properties;
 
 /**
  * 这个类用于执行SQL脚本,搬运自:
-     <dependency>
-     <groupId>com.ibatis</groupId>
-     <artifactId>ibatis2-common</artifactId>
-     <version>2.1.7.597</version>
-     </dependency>
+ *  gid:com.ibatis
+ *  aid:ibatis2-common
+ *  ver:2.1.7.597
+ * @author youyinnn
  */
 public class Resources {
     private static ClassLoader defaultClassLoader;

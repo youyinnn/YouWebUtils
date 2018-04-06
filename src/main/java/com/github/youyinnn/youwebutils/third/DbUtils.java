@@ -1,6 +1,7 @@
 package com.github.youyinnn.youwebutils.third;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -37,9 +38,17 @@ public class DbUtils {
     }
 
     public static void runSqlScript(Connection connection, String scriptFilePath) throws IOException, SQLException {
+        runSqlScript(connection, ClassLoader.getSystemClassLoader().getResourceAsStream(scriptFilePath));
+    }
+
+    public static void runSqlScript(Connection connection, String scriptFilePath, Class clazz) throws IOException, SQLException {
+        runSqlScript(connection, clazz.getClassLoader().getResourceAsStream(scriptFilePath));
+    }
+
+    public static void runSqlScript(Connection connection, InputStream sqlFileStream) throws IOException, SQLException {
         ScriptRunner scriptRunner = new ScriptRunner(connection, true, true);
         scriptRunner.setLogWriter(null);
-        InputStreamReader reader = new InputStreamReader(ClassLoader.getSystemClassLoader().getResourceAsStream(scriptFilePath));
+        InputStreamReader reader = new InputStreamReader(sqlFileStream);
         scriptRunner.runScript(reader);
         reader.close();
     }
