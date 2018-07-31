@@ -6,9 +6,10 @@ import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.Claim;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import sun.misc.BASE64Decoder;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.util.Base64;
 import java.util.Date;
 import java.util.Map;
 
@@ -44,14 +45,24 @@ public class JwtHelper {
     public static String getRawHeader(String token){
         DecodedJWT tokenDecode = JWT.decode(token);
         String header = tokenDecode.getHeader();
-        byte[] decode = Base64.getDecoder().decode(header);
+        byte[] decode = new byte[0];
+        try {
+            decode = new BASE64Decoder().decodeBuffer(header);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         return new String(decode);
     }
 
     public static String getRawPayLoad(String token){
         DecodedJWT tokenDecode = JWT.decode(token);
         String payload = tokenDecode.getPayload();
-        byte[] decode = Base64.getDecoder().decode(payload);
+        byte[] decode = new byte[0];
+        try {
+            decode = new BASE64Decoder().decodeBuffer(payload);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         return new String(decode);
     }
 

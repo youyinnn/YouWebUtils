@@ -1,6 +1,7 @@
 package com.github.youyinnn.youwebutils.third;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.io.IOException;
 import java.net.JarURLConnection;
 import java.net.URL;
@@ -47,13 +48,8 @@ public class ClassUtils {
             System.out.println("包目录不存在!");
             return;
         }
-        File[] dirFiles = dir.listFiles(file -> {
-            // 接受dir目录
-            boolean acceptDir = file.isDirectory();
-            // 接受class文件
-            boolean acceptClass = file.getName().endsWith(".class");
-            return acceptDir || acceptClass;
-        });
+        File[] dirFiles = dir.listFiles(new MyFileFilter());
+
         for (File file : dirFiles) {
             if(file.isDirectory()){
                 getFileClass(packName + "." + file.getName(), file.getAbsolutePath(),clazzs);
@@ -90,4 +86,16 @@ public class ClassUtils {
         }
     }
 
+}
+
+class MyFileFilter implements FileFilter{
+
+    @Override
+    public boolean accept(File pathname) {
+        // 接受dir目录
+        boolean acceptDir = pathname.isDirectory();
+        // 接受class文件
+        boolean acceptClass = pathname.getName().endsWith(".class");
+        return acceptDir || acceptClass;
+    }
 }
